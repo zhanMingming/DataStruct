@@ -52,6 +52,7 @@ public:
     int      TotalSize() const { return m_total_element_num; };
     void     Print() const;
 private:
+    int     BinarySearch(Key* array, int start, int end, const Key& element);
     //  split child  parent->m_child[index]
     void    SplitChild(Node* parent, int index);
     void    TraversalInsert(Node *node, const Key& element);

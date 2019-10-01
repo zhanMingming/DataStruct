@@ -3,13 +3,27 @@ namespace zhanmm {
 
 
 template<typename Key>
+int  BTree<Key>::BinarySearch(Key* array, int start, int end, const Key& element) {
+    while (start <= end) {
+        int mid = (end + start) / 2;
+        if (array[mid] == element) {
+            return mid;
+        } else if (array[mid] > element) {
+            end = mid - 1;
+        } else {
+            start = mid + 1;
+        }
+    }
+    return start;
+}
+
+
+template<typename Key>
 typename BTree<Key>::Node*  BTree<Key>::Search(const Key& element) {
     Node* node = root;
     while (node != nullptr) {
-        int index = 0;
-        while(index < node->m_element_num && element > node->m_key[index]) {
-            ++index;
-        }
+        int index = BinarySearch(node->m_key, 0, node->m_element_num - 1, element);
+        
         //find node
         if (index < node->m_element_num && element == node->m_key[index]) {
             return node;
@@ -36,10 +50,8 @@ void BTree<Key>::Insert(const Key& element) {
         newNode->m_element_num = 0;
         root = newNode;
 
-        std::cout << "need split" << std::endl;
         SplitChild(root, 0);
     } 
-    std::cout << "TraversalInsert" << std::endl;
     TraversalInsert(root, element);
     m_total_element_num++;
 }
