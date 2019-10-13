@@ -19,7 +19,7 @@ class HandleTable {
 
   Entry* Remove(const Robj* key);
 
-  Entry*  RandomRemoveExpireKey();
+  Entry*  RandomExpireKey();
 
  private:
   bool  IsRehashing() {

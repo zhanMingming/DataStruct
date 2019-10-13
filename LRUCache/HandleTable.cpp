@@ -1,6 +1,8 @@
-#include"HashHandle.h"
+#include"HandleTable.h"
 #include"Entry.h"
+#include"Util.h"
 #include<sys/time.h>
+#include<stdlib.h>
 #include<iostream>
 
 
@@ -8,19 +10,20 @@ using namespace std;
 
 namespace zhanmm {
 
-HashHandle::HashHandle()
-:rehash_idx(-1)
+HandleTable::HandleTable(float load_factor_)
+:rehash_idx(-1), load_factor(load_factor_)
 {
-    table[0].Resize(8);
-    std::cout << "resize" << std::endl;
+    table[0].Resize(INIT_HASH_TABLE_SIZE);
 }
 
-HashHandle::~HashHandle() 
-{}
+HandleTable::~HandleTable() 
+{
+    std::cout << "~HandleTable" << std::endl;
+}
 
 
 
-Entry* HashHandle::Lookup(const Robj* key) {
+Entry* HandleTable::Lookup(const Robj* key) {
     if (IsRehashing()) {
         Entry* p = table[1].Lookup(key);
         if (p) {
@@ -36,15 +39,15 @@ Entry* HashHandle::Lookup(const Robj* key) {
 
 
 
-Entry* HashHandle::Insert(Entry* key) {
-    std::cout << "HashHandle Insert" << std::endl;
+Entry* HandleTable::Insert(Entry* key) {
+    //std::cout << "HandleTable Insert" << std::endl;
     Entry *old = nullptr;
     if (IsRehashing()) {
         old = table[1].Insert(key);
         ReHash(1);   
     } else {
         old = table[0].Insert(key);
-        if (table[0].NeedResize()) {
+        if (table[0].length_  * load_factor  >  table[0].elems_) {
             Resize();
         }
     }
@@ -52,7 +55,7 @@ Entry* HashHandle::Insert(Entry* key) {
 } 
 
 
-Entry* HashHandle::Remove(const Robj* key) {
+Entry* HandleTable::Remove(const Robj* key) {
     Entry* result = nullptr;
     if (IsRehashing()) {
         result = table[1].Remove(key);
@@ -66,9 +69,29 @@ Entry* HashHandle::Remove(const Robj* key) {
     return table[0].Remove(key);
 }
 
+/**
+ * return num of removeExpireKey
+ */
+
+Entry* HandleTable::RandomExpireKey() {
+    Entry* rand_entry = nullptr;
+    int rand_num = 0;
+    
+    if (IsRehashing()) {
+        rand_num = random() % table[1].length_;
+        rand_entry = table[0].list_[rand_num] != nullptr ? table[0].list_[rand_num]: table[1].list_[rand_num];
+
+    } else {
+        rand_num = random() % table[0].length_;
+        rand_entry = table[0].list_[rand_num];
+    }
+    
+    return rand_entry;
+}
 
 
-void HashHandle::Resize() {
+
+void HandleTable::Resize() {
     if (IsRehashing()) {
         return;
     }
@@ -77,7 +100,7 @@ void HashHandle::Resize() {
 }
 
 
-int  HashHandle::ReHash(int step) {
+int  HandleTable::ReHash(int step) {
 
     if (rehash_idx < 0) return 0;
     while(step--) {
@@ -120,16 +143,12 @@ int  HashHandle::ReHash(int step) {
     return 1;
 }
 
-long long timeInMilliseconds(void) {
-    struct timeval tv;
 
-    gettimeofday(&tv,NULL);
-    return (((long long)tv.tv_sec)*1000)+(tv.tv_usec/1000);
-}
+
 /*
  在给定毫秒数内，以 100 步为单位，对字典进行 rehash 。
 */
-int HashHandle::ReHashMilliseconds(int ms) {
+int HandleTable::ReHashMilliseconds(int ms) {
     // 记录开始时间
     long long start = timeInMilliseconds();
     int rehashes = 0;

@@ -5,11 +5,11 @@
 
 namespace zhanmm {
 
-class HashHandle;
+class HandleTable;
 
 class HashTable {
  public:
-  friend class HashHandle;
+  friend class HandleTable;
   
   HashTable();
   ~HashTable();

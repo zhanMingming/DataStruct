@@ -2,19 +2,19 @@
 * @Author: zhanmingming
 * @Date:   2019-10-07 12:27:43
 * @Last Modified by:   zhanmingming
-* @Last Modified time: 2019-10-08 00:24:04
+* @Last Modified time: 2019-10-13 21:05:18
 */
 #include<string>
 #include<iostream>
 #include"Entry.h"
-#include"HashHandle.h"
+#include"HandleTable.h"
 
 using namespace std;
 using namespace zhanmm;
 
 int main() {
 
-    HashHandle handle;
+    HandleTable handle(1.0);
     string key = "wode";
     string value = "val";
 

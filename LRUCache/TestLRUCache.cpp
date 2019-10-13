@@ -2,23 +2,26 @@
 * @Author: zhanmingming
 * @Date:   2019-10-08 20:16:29
 * @Last Modified by:   zhanmingming
-* @Last Modified time: 2019-10-09 00:19:29
+* @Last Modified time: 2019-10-13 22:19:04
 */
 #include "LRUCache.h"
 #include<iostream>
 #include<unistd.h>
+#include"CacheOption.h"
+
 
 
 using namespace std;
 using namespace zhanmm;
 
 int main() {
-    LRUCache  cache;
-    cache.SetCapacity(1024*1024);
+    CacheOption option;
+    LRUCache  cache(option);
+    //cache.SetCapacity(1024*1024);
     string key = "wode";
     string value = "val";
 
-    for(int i = 0; i < 10000; ++i) {
+    for(int i = 0; i < 20; ++i) {
         string key1 = key + to_string(i);
         string value1 = value + to_string(i);
         cache.Set(key1, value1, 100);
@@ -32,6 +35,7 @@ int main() {
 
     cache.Set("iam", "ming", 1);
     sleep(2);
+    std::cout << "after sleep" << std::endl;
     std::cout << cache.Get("iam") << std::endl;
     
 

@@ -6,7 +6,6 @@
 #include"Hash.h"
 
 
-
 using namespace std;
 
 namespace zhanmm {
@@ -31,11 +30,8 @@ Entry* HashTable::Lookup(const Robj* key) {
 }
 
 Entry* HashTable::Insert(Entry* h) {
-    std::cout << "hashTable:" << std::endl;
-    std::cout << h->key->toString() << std::endl;
+    //std::cout << h->key->toString() << std::endl;
     Entry** ptr = FindPointer(h->key);
-
-    std::cout << "hashTable2" << std::endl;
     Entry* old = *ptr;
     //如果*ptr != null, 则证明已有相同节点存在, 将*ptr 赋值为h 
     //如果*ptr == null, 则在末尾插入h 节点。
@@ -69,19 +65,9 @@ Entry* HashTable::Remove(const Robj* key) {
 Entry** HashTable::FindPointer(const Robj* key) {
     uint32_t hash = HashFunc(key);
     Entry** ptr = &list_[hash & (length_ - 1)];
-    std::cout << "FindPointer " << std::endl;
-    std::cout << "length_:" << length_ << std::endl;
-    std::cout << "elems_:" << elems_ << std::endl;
-    for(int index = 0; index < length_ ; ++index) {
-        std::cout << list_[index] << std::endl;
-    }
-    std::cout << list_ << std::endl;
-    std::cout << ptr << std::endl;
-    std::cout << *ptr << std::endl;
     while ((*ptr != nullptr) && !(compartor((*ptr)->key, key))) {
         ptr = &(*ptr)->next_hash;
     }
-    std::cout << ptr << std::endl;
     return ptr;
 }
 
@@ -96,18 +82,17 @@ void HashTable::Resize(int size) {
 
     Entry** new_list = new Entry*[size];
     memset(new_list, 0, sizeof(new_list[0]) * size);
-    std::cout << "resize:------" << std::endl;
 
     list_ = new_list;
     length_ = size;
 
-    std::cout << length_ << std::endl;
 }
 
 
 void HashTable::Free() {
 
-    //std::cout << "hashTable start Free" << std::endl;
+    std::cout << "hashTable start Free" << std::endl;
+    
     for (int index = 0; index < length_; ++index) {
         Entry *h = list_[index];
         while (h != nullptr) {

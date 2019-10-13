@@ -1,5 +1,6 @@
 #include"LRUCache.h"
 #include"Mutex.h"
+#include"Util.h"
 #include<string>
 #include<sys/time.h>
 #include<stdint.h>
@@ -9,27 +10,44 @@ using namespace std;
 
 namespace zhanmm {
 
-long timeInSeconds(void) {
-    struct timeval tv;
-    gettimeofday(&tv,NULL);
-    return tv.tv_sec;
-    // return (((long long)tv.tv_sec)*1000)+(tv.tv_usec/1000);
-}
-
-LRUCache::LRUCache() : capacity(10), usage(0) {
-  // Make empty circular linked lists.
-  lru.next = &lru;
-  lru.prev = &lru;
+bool MemoryIsLow() {
+    return false;
 }
 
 
-LRUCache::~LRUCache() {}
+LRUCache::LRUCache(CacheOption option_)
+:option(option_), usage(0)
+{
+    assert(option.load_factor > 0);
+
+    option.max_key_length = option.max_key_length == -1 ? MAX_KEY_LENGTH : option.max_key_length;
+    option.max_value_length = option.max_value_length == -1 ? MAX_VALUE_LENGTH : option.max_value_length;
+    // Make empty circular linked lists.
+    std::cout << option.toString();
+
+    db = new DB(option.load_factor);
+    
+    lru.next = &lru;
+    lru.prev = &lru;
+
+}
+
+
+LRUCache::~LRUCache() {
+    std::cout << "LRUCache~" << std::endl;
+    if (db != nullptr) {
+        std::cout << "LRUCache~" << std::endl;
+        delete db;
+        db = nullptr;
+    }
+}
 
 
 bool LRUCache::Set(const std::string& key,  const std::string& value,  int expire_time) {
-    std::cout << "lick " << std::endl;
-    MutexLocker lock(mutex);
-    std::cout << "start Insert" << std::endl;
+    if (key.size() > option.max_key_length  || value.size() > option.max_value_length) {
+        return false;
+    }
+
     return Insert(key, value, expire_time);
     
 }
@@ -44,47 +62,67 @@ std::string LRUCache::Get(const std::string& key) {
 }
 
 
-
-bool LRUCache::Insert(const string& key, const string& value, int expire_time) {
-    std::cout << "Lru:" << capacity <<  std::endl;
-    capacity = 1024*1024;
-    assert(capacity > 0);
+bool LRUCache::Insert(const string& key, const string& value, int expire_time_) {
+    //std::cout << "Lru:" << capacity <<  std::endl;
+    //capacity = 1024*1024;
+    
+    MutexLocker lock(mutex);
+    //assert(capacity > 0);
     //分配结点
     Entry* newEntry = new Entry(key, value);
     
-    FinishErase(db.dict.Insert(newEntry));
-    std::cout << "Insert rellay " << std::endl;
+    FinishErase(db->dict->Insert(newEntry));
+    ++db->slots;
     LRUAppend(&lru, newEntry);
     usage += key.length();
     usage += value.length();
 
-    if(expire_time != -1) {
-        int64_t expireTime = timeInSeconds() + expire_time;
-        Entry*  expireEntry = new Entry(newEntry->key, expireTime);
-        FinishErase(db.expire.Insert(expireEntry));
+    if(expire_time_ != -1) {
+        int64_t expire_time = timeInSeconds() + expire_time_;
+        Entry*  expireEntry = new Entry(newEntry->key, expire_time);
+        FinishErase(db->expire->Insert(expireEntry));
+        ++db->expire_num;
     }
 
-    if (usage > capacity) {
-        LRUEliminate();
+    if ((option.maxmemory == -1 && MemoryIsLow()) || (usage > option.maxmemory)) {
+    
+        LRUEliminate(option.lru);
     }
     return true;
 }
 
 
 Entry* LRUCache::Lookup(const std::string& key) {
-    Robj*  search =  new Robj(key);
-    Entry*  t =  db.expire.Lookup(search);
+    // need ToDo delete search
+    Robj search(key);
+    Entry*  t =  db->expire->Lookup(&search);
 
     if (t) {
-        std::cout << "time:" << t->v.s64 << " now:" << timeInSeconds() <<  std::endl;
-        if (timeInSeconds() > t->v.s64) {
-            Entry* del = db.dict.Lookup(search);
-            std::cout << del->key->toString() << std::endl;
-            FreeEntry(del);
+        if (DeleteKeyIfExpire(t)) {
             return nullptr;
         }
     }
-    return db.dict.Lookup(search);
+    return db->dict->Lookup(&search);
+}
+
+Entry* LRUCache::LookupWithNotCheckExpire(const std::string& key) {
+    Robj search(key);
+    return db->dict->Lookup(&search);
+}
+
+
+
+bool LRUCache::ExpireKey(const std::string& key, int expire_time_) {
+    Entry* entry = nullptr;
+    if ((entry = LookupWithNotCheckExpire(key)) != nullptr) {
+        int64_t expire_time = timeInSeconds() + expire_time_;
+        Entry* expireEntry = new Entry(entry->key, expire_time);
+        MutexLocker lock(mutex);
+        FinishErase(db->expire->Insert(expireEntry));
+        ++db->expire_num;
+        return true;
+    }
+    return false;
 }
 
 
@@ -95,16 +133,27 @@ void LRUCache::LRUAppend(Entry* list, Entry* p) {
     p->next->prev = p;
 }
 
+bool LRUCache::DeleteKeyIfExpire(Entry* expire) {
+    if (timeInSeconds() > expire->v.s64) {
+        std::cout << "hahah--" << std::endl;
+        std::cout << expire->key->toString() << std::endl;
+        MutexLocker lock(mutex);
+        FreeEntry(expire);
+        return true;
+    }
+    return false;
+}
 
 void LRUCache::LRURemove(Entry* p) {
     p->next->prev = p->prev;
     p->prev->next = p->next;
 }
 
-void LRUCache::LRUEliminate() {
+void LRUCache::LRUEliminate(LruOption type) {
 
     //当插入Key之后，发现所用空间> caapacity时，需要释放空间
-    while (usage > capacity && lru.next != &lru) {
+    // Todo  需要 优化
+    while (usage > option.maxmemory && lru.next != &lru) {
         Entry* old = lru.next;
         FreeEntry(old);
         usage -= old->key->len;
@@ -113,19 +162,48 @@ void LRUCache::LRUEliminate() {
 }
 
 
-
 void LRUCache::FreeEntry(Entry* del) {
-    MutexLocker lock(mutex);
-    LRURemove(del);
-    std::cout << "Lru remove Finish" << std::endl; 
-    Entry* dictDel = db.dict.Remove(del->key);
-    std::cout << "dict remove Finish" << std::endl;
-    Entry* expireDel = db.expire.Remove(del->key);
-    std::cout << "expire remove Finish" << std::endl;
-    FinishErase(dictDel);
-    FinishErase(expireDel);
-    std::cout << "Finish" << std::endl;
+
+    Entry* dictDel = db->dict->Remove(del->key);
+
+    if (dictDel) {
+        LRURemove(dictDel);
+        --db->slots;
+        FinishErase(dictDel);
+    }
+
+    Entry* expireDel = db->expire->Remove(del->key);
+
+    if (expireDel) {
+        --db->expire_num;
+        FinishErase(expireDel);
+    }
 }
+/* 
+redis.c/activeExpireCycle
+*/
+
+int LRUCache::RandomRemoveExpireKey() {
+
+    int num = db->expire_num;
+    
+    int del_expire_num = 0;
+    while (num--) {
+        Entry*  entry = db->expire->RandomExpireKey();
+        if (entry == nullptr) {
+            continue;
+        }
+        while(entry != nullptr) {
+            Entry* next = entry->next_hash;
+            if (DeleteKeyIfExpire(entry)) {
+                ++del_expire_num;
+            }
+            entry = next;
+        }
+    }
+    return del_expire_num;
+}
+
 
 
 void LRUCache::FinishErase(Entry* p) {
