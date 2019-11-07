@@ -51,6 +51,9 @@ struct DB {
 
     HandleTable*  dict;
     HandleTable*  expire;
+
+    // 需要去掉expire_num 以及 slots 
+    // 利用 hashtable.elem_ 元素的个数来统计
     uint32_t  expire_num; 
     uint64_t  avg_ttl;
     uint32_t  slots;

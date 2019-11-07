@@ -117,6 +117,8 @@ bool LRUCache::ExpireKey(const std::string& key, int expire_time_) {
     if ((entry = LookupWithNotCheckExpire(key)) != nullptr) {
         int64_t expire_time = timeInSeconds() + expire_time_;
         Entry* expireEntry = new Entry(entry->key, expire_time);
+        
+        // 这个锁 需要优化
         MutexLocker lock(mutex);
         FinishErase(db->expire->Insert(expireEntry));
         ++db->expire_num;
@@ -137,6 +139,7 @@ bool LRUCache::DeleteKeyIfExpire(Entry* expire) {
     if (timeInSeconds() > expire->v.s64) {
         std::cout << "hahah--" << std::endl;
         std::cout << expire->key->toString() << std::endl;
+        // 这个锁 需要优化
         MutexLocker lock(mutex);
         FreeEntry(expire);
         return true;
