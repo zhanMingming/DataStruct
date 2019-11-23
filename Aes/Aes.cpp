@@ -2,11 +2,18 @@
 * @Author: zhanmingming
 * @Date:   2019-11-07 17:25:23
 * @Last Modified by:   zhanmingming
-* @Last Modified time: 2019-11-07 19:05:10
+* @Last Modified time: 2019-11-08 11:46:41
 */
 #include "Aes.h"
 using namespace CryptoPP;
 using namespace std;
+
+namespace {
+
+
+}
+
+
 
 byte Aes::s_key[CryptoPP::AES::DEFAULT_KEYLENGTH];
 
@@ -24,7 +31,6 @@ std::string Aes::encrypt(const std::string&  plain) {
     std::string cipher, encoded;
 
     try {
-        cout << "plain text: " << plain << endl;
 
     // ECB_Mode< AES >::Encryption e;
     // e.SetKey( key, key.size() );
@@ -56,8 +62,10 @@ std::string Aes::encrypt(const std::string&  plain) {
 }
 
 
-std::string Aes::decrypt(const std::string&  cipher) {
-
+std::string Aes::decrypt(std::string  cipher) {
+    
+    transform(cipher.begin(), cipher.end(), cipher.begin(), ::toupper);
+    
     string recovered, decoded;
 
     try {
@@ -78,8 +86,6 @@ std::string Aes::decrypt(const std::string&  cipher) {
                 new StringSink( recovered )
             ) // StreamTransformationFilter
         ); // StringSource
-
-        cout << "recovered text: " << recovered << endl;
     }
     catch( CryptoPP::Exception& e )
     {
