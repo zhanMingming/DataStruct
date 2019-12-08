@@ -2,14 +2,111 @@
 * @Author: zhanmingming
 * @Date:   2019-11-25 22:40:36
 * @Last Modified by:   zhanmingming
-* @Last Modified time: 2019-12-03 23:47:11
+* @Last Modified time: 2019-12-08 00:05:12
 */
+
+/*
+思考动态规划问题的四个步骤
+
+一般解决动态规划问题，分为四个步骤，分别是
+
+问题拆解，找到问题之间的具体联系， 与子问题之间的联系
+状态定义
+递推方程推导
+实现
+*/
+
+
+
+
+/*
+
+https://leetcode.com/problems/maximal-rectangle/
+*/
+
+
+/*
+
+https://leetcode.com/problems/multiply-strings
+
+字符串数字 相乘  
+比如 num1[i] * num2[j] =  得到的数字位于 num[i+j, i+j+1]
+
+ */
+class Solution {
+public:
+    string multiply(string num1, string num2) {
+        int n = num1.size();
+        int m = num2.size();
+        vector<int>  vec(n+m, 0);
+        for (int i = n - 1; i >= 0; --i) {
+            for (int j = m - 1; j >= 0; --j) {
+                int num = (num1[i] - '0') * (num2[j] - '0');
+                
+                int p1 = i+j;
+                int p2 = p1 + 1;
+                num += vec[p2];
+                vec[p1] += num / 10;
+                
+                vec[p2] = num % 10;
+            }
+        }
+        string ret = "";
+        int index = 0;
+        while (index < vec.size() && vec[index] == 0)  ++index;
+        
+        if (index >= vec.size()) return "0";
+        
+        while (index < vec.size()) {
+            ret += to_string(vec[index++]);
+        }
+        return ret;
+    }
+};
+
+
+
+
+
 
 /*
 对于递归、深度遍历、二分查找 首先要想好结束的条件
 对于动态规划（最优子结构、重叠子问题）
 将问题划分成子问题，想好状态转移方程。
 */
+
+
+/*
+求 最长子回文序列的长度
+https://leetcode.com/problems/longest-palindromic-subsequence
+dp[i][j]: the longest palindromic subsequence's length of substring(i, j), 
+here i, j represent left, right indexes in the string
+
+State transition:
+dp[i][j] = dp[i+1][j-1] + 2 if s.charAt(i) == s.charAt(j)
+otherwise, dp[i][j] = Math.max(dp[i+1][j], dp[i][j-1])
+Initialization: dp[i][i] = 1
+
+ */
+class Solution {
+public:
+    int longestPalindromeSubseq(string s) {
+        int size = s.size();
+        
+        vector<vector<int>> vec(size, vector<int>(size, 0));
+        for (int i =  size - 1; i >= 0; --i) {
+            vec[i][i] = 1;
+            for (int j = i + 1; j < size; ++j) {
+                if (s[i] == s[j]) {
+                    vec[i][j] = vec[i+1][j-1] + 2;
+                } else {
+                    vec[i][j] = max(vec[i+1][j], vec[i][j-1]);
+                }
+            }
+        }
+        return vec[0][size-1];
+    }
+};
 
 
 /* 
