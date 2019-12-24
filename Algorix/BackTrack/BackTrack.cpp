@@ -2,8 +2,364 @@
 * @Author: zhanmingming
 * @Date:   2019-11-25 22:40:36
 * @Last Modified by:   zhanmingming
-* @Last Modified time: 2019-12-08 00:05:12
+* @Last Modified time: 2019-12-24 10:26:53
 */
+
+/*
+
+
+https://leetcode-cn.com/problems/longest-common-prefix/
+
+编写一个函数来查找字符串数组中的最长公共前缀。
+
+如果不存在公共前缀，返回空字符串 ""。
+ */
+
+
+class Solution {
+public:
+    string longestCommonPrefix(vector<string>& strs) {
+        if (strs.size() < 1) return "";
+        return lcs(strs, 0, strs.size() - 1);
+    }
+    string lcs(vector<string>& strs, int left, int right) {
+        if (left == right) {
+            return strs[left];
+        }
+        int mid = (right - left)/2 + left;
+        
+        string l = lcs(strs, left, mid);
+    
+        string r = lcs(strs, mid+1, right);
+        return lcs2(l, r);
+    }
+
+    string lcs2(const string& l, const string& r) {
+        int i = 0, j = 0;
+        while ( i < l.size() && j < r.size() && l[i] == r[j]) {
+            ++i;
+            ++j;
+        }
+        return l.substr(0, i);
+    }
+};
+
+
+
+/*
+
+https://leetcode-cn.com/problems/kth-largest-element-in-an-array
+找第K大的数字， 可以转换成找第K小的数字
+
+*/
+
+
+class Solution {
+public:
+    int findKthLargest(vector<int>& nums, int k) {
+        return findKmin(nums, 0, nums.size() - 1, nums.size() - k);
+    }
+    int partion(vector<int>& nums, int left, int right) {
+        if (left >= right) return left;
+
+        int ptor = nums[left];
+        while (left < right) {
+            while(left < right &&  nums[right] >= ptor) --right;
+            nums[left] = nums[right];
+            while(left < right && nums[left] <= ptor) ++left;
+            nums[right] = nums[left];   
+        }
+
+        nums[left] = ptor;
+        return left;
+    }
+    
+    int findKmin(vector<int>& nums, int left, int right, int kmin) {
+        if (left >= right) return nums[left];
+        int index = partion(nums, left, right);
+        if (index == kmin) {
+            return  nums[index];
+        } else if (index > kmin) {
+            return findKmin(nums, left, index-1, kmin);
+        } else {
+            return findKmin(nums, index+1, right, kmin);
+        }
+
+    }
+};
+
+
+/**
+ * 查找 搜索二叉树中的 第K小的元素
+ * 基本思路：中序遍历
+ * https://leetcode-cn.com/problems/kth-smallest-element-in-a-bst/
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode(int x) : val(x), left(NULL), right(NULL) {}
+ * };
+ */
+
+class Solution {
+public:
+    int kthSmallest(TreeNode* root, int k) {
+        int res = 0;
+        bool find = false;
+        int index = 0;
+        dfs(root, k, find, res, index);
+        return res;
+    }
+
+    void dfs(TreeNode* root, int& k, bool& find, int& res, int& i) {
+        if (root == nullptr || find) return;
+
+        dfs(root->left, k, find, res, i);
+        if (++i == k) {
+            res = root->val;
+            find = true;
+            return;
+        }
+        dfs(root->right, k, find, res, i);
+    }    
+};
+
+
+
+/*
+给定一组不含重复元素的整数数组 nums，返回该数组所有可能的子集（幂集）。
+
+说明：解集不能包含重复的子集。
+https://leetcode-cn.com/problems/subsets/
+
+*/
+
+
+class Solution {
+public:
+
+    vector<vector<int>> subsets(vector<int>& nums) {
+        vector<vector<int>> ret;
+        subs(0, nums, ret, vector<int>());
+        return ret;
+    }
+
+    void subs(int index, vector<int>& nums, vector<vector<int>>& ret, vector<int> t) {
+        ret.push_back(t);
+        for (int i = index; i < nums.size(); ++i) {
+            t.push_back(nums[i]);
+            subs(i+1, nums, ret, t);
+            t.pop_back();
+        }
+    }
+
+};
+
+
+
+/*
+
+给定一个没有重复数字的序列，返回其所有可能的全排列。
+https://leetcode-cn.com/problems/permutations/
+全排列
+
+*/
+
+class Solution {
+public:
+    
+    vector<vector<int>> vec;
+
+    vector<vector<int>> permute(vector<int>& nums) {
+        pme(vector<int>(), nums);
+        return vec;
+    }
+    void  pme(vector<int> nums, vector<int> p) {
+        if (p.empty()) {
+            vec.push_back(nums);
+            return;
+        }
+        for (int index = 0; index < p.size(); ++index) {
+            nums.push_back(p[index]);
+            vector<int> t(p);
+            t.erase(t.begin() + index);
+            pme(nums, t);
+            nums.pop_back();
+        }
+    }
+};
+
+
+/**
+ *
+ * 给定一个二叉搜索树, 找到该树中两个指定节点的最近公共祖先。
+ * https://leetcode-cn.com/problems/lowest-common-ancestor-of-a-binary-search-tree/
+ * 
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode(int x) : val(x), left(NULL), right(NULL) {}
+ * };
+ */
+class Solution {
+public:
+    TreeNode* lowestCommonAncestor(TreeNode* root, TreeNode* p, TreeNode* q) {
+        if (!root || !p || !q) {
+            return nullptr;
+        }
+        while (root != nullptr) {
+            if (p->val > root->val && q->val > root->val) {
+                root = root->right;
+            } else if (p->val < root->val && q->val < root->val) {
+                root = root->left;
+            } else {
+                return root;
+            }
+
+        }
+        return nullptr;
+
+    }
+};
+
+
+/**
+ *
+ 给定一个非空二叉树，返回其最大路径和。
+
+本题中，路径被定义为一条从树中任意节点出
+
+最大路径和， 从根节点到 任意一个节点的路径和
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode(int x) : val(x), left(NULL), right(NULL) {}
+ * };
+ */
+class Solution {
+public:
+    
+    int maxPathSum(TreeNode* root) {
+        
+        if (root == nullptr) {
+            return 0;
+        }
+        int ret = 0;
+        mps(0, ret, root);
+        return ret;
+    }
+
+
+    void mps(int val, int& maxVal, TreeNode* root) {
+        
+
+        maxVal = val > maxVal ? val : maxVal;
+        if (root != nullptr) {
+            mps(val + root->val, maxVal, root->left);
+        
+        
+            mps(val + root->val, maxVal, root->right);
+        }
+        
+        
+    }
+};
+
+
+
+/*
+给定一个非空整数数组，除了某个元素只出现一次以外，其余每个元素均出现了三次。找出那个只出现了一次的元素。
+
+说明：
+
+你的算法应该具有线性时间复杂度。 你可以不使用额外空间来实现吗？
+
+来源：力扣（LeetCode）
+链接：https://leetcode-cn.com/problems/single-number-ii
+著作权归领扣网络所有。商业转载请联系官方授权，非商业转载请注明出处。
+
+
+ */
+
+
+class Solution {
+public:
+    int singleNumber(vector<int>& nums) {
+        int one = 0;
+        int two  =0;
+        for (int index = 0; index < nums.size(); ++index) {
+            one = one ^ nums[index] & ~two;
+            two = two ^ nums[index] &  ~one;
+        }
+        return one;
+    }
+};
+
+作者：jyd
+链接：https://leetcode-cn.com/problems/single-number-ii/solution/single-number-ii-mo-ni-san-jin-zhi-fa-by-jin407891/
+来源：力扣（LeetCode）
+
+
+
+/*
+
+https://leetcode.com/problems/wildcard-matching/
+
+The most confusing part for me is how to deal with '*'. At first I couldn't figure out why the condition would be (dp[i-1][j] == true || dp[i][j-1] == true). Hope detailed DP description below helps!
+
+dp[i][j]: true if the first i char in String s matches the first j chars in String p
+Base case:
+origin: dp[0][0]: they do match, so dp[0][0] = true
+first row: dp[0][j]: except for String p starts with *, otherwise all false
+first col: dp[i][0]: can't match when p is empty. All false.
+Recursion:
+Iterate through every dp[i][j]
+dp[i][j] = true:
+if (s[ith] == p[jth] || p[jth] == '?') && dp[i-1][j-1] == true
+elif p[jth] == '*' && (dp[i-1][j] == true || dp[i][j-1] == true)
+-for dp[i-1][j], means that * acts like an empty sequence.
+eg: ab, ab*
+-for dp[i][j-1], means that * acts like any sequences
+eg: abcd, ab*
+
+Start from 0 to len
+Output put should be dp[s.len][p.len], referring to the whole s matches the whole p
+
+
+*/
+
+class Solution {
+public:
+    bool isMatch(string s, string p) {
+        
+        vector<vector<bool>>  vec(s.size() + 1, vector<bool>(p.size() + 1, false));
+        vec[0][0] = true;
+        for (int index = 1; index <= p.size(); ++index) {
+            if (p[index-1] == '*') {
+                vec[0][index] = true;
+            } else {
+                break;
+            }
+        }
+        
+        for (int i = 1; i <= s.size(); ++i) {
+            for (int j = 1; j <= p.size(); ++j) {
+                if (s[i-1] == p[j-1]  ||  p[j-1] == '?') {
+                    vec[i][j]  = vec[i-1][j-1];
+                } else if (p[j-1] == '*') {
+                    vec[i][j] =  vec[i-1][j] || vec[i][j-1];
+                }
+            }
+        }
+        return vec[s.size()][p.size()];
+    }
+};
+
 
 /*
 思考动态规划问题的四个步骤
@@ -17,18 +373,115 @@
 */
 
 
+/*
+最长有效路径, 使用stack
+https://leetcode.com/problems/longest-valid-parentheses
+*/
+
+class Solution {
+public:
+    int longestValidParentheses(string s) {
+        if (s.size() < 1) {
+            return 0;
+        }
+        stack<int> obstk;
+        for (int index = 0; index < s.size(); ++index) {
+            if (!obstk.empty() && s[obstk.top()] == '(' && s[index] == ')') {
+                obstk.pop();
+            } else {
+                obstk.push(index);
+            }
+        }
+        if (obstk.empty()) return s.size();
+        int length = 0;
+        int last = s.size();
+        int pre = 0;
+        while (!obstk.empty()) {
+            pre = obstk.top();
+            length = max(length,  last - 1 - pre);
+            last = pre;
+            obstk.pop();
+        }
+        return max(length, pre);
+    }
+};
+
+/*
+求两个有序数组 的中位数
+https://leetcode.com/problems/median-of-two-sorted-arrays
+具体思路见：https://zhuanlan.zhihu.com/p/70654378
+*/
+
+class Solution {
+public:
+    double findMedianSortedArrays(vector<int>& nums1, vector<int>& nums2) {
+        int m = nums1.size(), n = nums2.size(), l = 0, r = m;
+        if (m > n) {
+            return findMedianSortedArrays(nums2, nums1);
+        }
+        while (l <= r) {
+            int i = (l + r) / 2, j = (m + n + 1) / 2 - i;
+            if (i && nums1[i - 1] > nums2[j]) {
+                r = i - 1;
+            } else if (i < m && nums2[j - 1] > nums1[i]) {
+                l = i + 1;
+            } else {
+                int lmax = !i ? nums2[j - 1] : (!j ? nums1[i - 1] : max(nums1[i - 1], nums2[j - 1]));
+                if ((m + n) % 2) {
+                    return lmax;
+                }
+                int rmin = i == m ? nums2[j] : (j == n ? nums1[i] : min(nums1[i], nums2[j]));
+                return 0.5 * (lmax + rmin);
+            }
+        }
+        return 0.0;
+    }
+};
+
+
 
 
 /*
+利用栈 来实现 大的先出
+https://leetcode.com/problems/largest-rectangle-in-histogram
+*/
 
+class Solution {
+public:
+    int largestRectangleArea(vector<int>& heights) {
+        
+        stack<int>  obstk;
+        
+        heights.push_back(0);
+        
+        int area = 0;
+        for (int index = 0; index < heights.size(); ++index) {
+            
+            while(!obstk.empty() && heights[obstk.top()] > heights[index]) {
+                int high = heights[obstk.top()];
+                
+                obstk.pop();
+                
+                int silde = obstk.empty()? index : (index - obstk.top() - 1);
+                area = max (area,  high * silde);
+            }
+            
+            obstk.push(index);
+        }
+        return area;
+    }
+};
+
+
+
+
+/*
 https://leetcode.com/problems/maximal-rectangle/
 */
 
 
 /*
-
 https://leetcode.com/problems/multiply-strings
-
 字符串数字 相乘  
 比如 num1[i] * num2[j] =  得到的数字位于 num[i+j, i+j+1]
 
@@ -105,6 +558,34 @@ public:
             }
         }
         return vec[0][size-1];
+    }
+};
+
+/*
+https://leetcode.com/problems/longest-palindromic-substring
+*/
+class Solution {
+public:
+    string longestPalindrome(string s) {
+        int maxLen = 0;
+        int pos = 0;
+        for (int index = 0; index < s.size() - maxLen/2; ++index) {
+            int j = index;
+            int k = index;
+            
+            while (k < s.size()-1 && s[k] == s[k+1]) k++;
+            
+            while (j > 0 && k < s.size()-1 && s[j-1] == s[k+1])  {
+                --j;
+                ++k;
+            }
+            if (maxLen < (k - j + 1)) {
+                maxLen = k - j + 1;
+                pos = j;
+            }
+        }
+        
+        return s.substr(pos, maxLen);
     }
 };
 
@@ -249,7 +730,7 @@ public:
                 break;
             }
             int mid = (high - low) / 2 + low;
-            if (nums[mid] >= nums[high]) {
+            if (nums[mid] >= nums[low]) {
                 low = mid + 1;
             } else {
                 high = mid;
@@ -357,6 +838,8 @@ dp[i][j] = dp[i-1][j] + dp[i][j-1]
 Unique Path II
 https://leetcode.com/problems/unique-paths-ii/
 
+*/
+
 class Solution {
 public:
     int uniquePathsWithObstacles(vector<vector<int>>& obstacleGrid) {
@@ -393,7 +876,6 @@ public:
 Unique Path III
 https://leetcode.com/problems/unique-paths-iii/
 
-*/
 
 
 
