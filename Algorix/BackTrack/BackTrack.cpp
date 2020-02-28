@@ -1,20 +1,1276 @@
+
+
+
+
+
+
+
 /*
-* @Author: zhanmingming
-* @Date:   2019-11-25 22:40:36
-* @Last Modified by:   zhanmingming
-* @Last Modified time: 2019-12-24 10:26:53
+https://leetcode-cn.com/problems/path-sum-ii/
+给定一个二叉树和一个目标和，找到所有从根节点到叶子节点路径总和等于给定目标和的路径。
+说明: 叶子节点是指没有子节点的节点。
 */
 
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode(int x) : val(x), left(NULL), right(NULL) {}
+ * };
+ */
+class Solution {
+public:
+    vector<vector<int>> pathSum(TreeNode* root, int sum) {
+        vector<vector<int>> ret;
+        pathSumToTarget(ret, vector<int>(), root, 0, sum);
+        return ret;
+    }
+    
+    void pathSumToTarget(vector<vector<int>>& ret, vector<int> temp, TreeNode* root, int val, int target) {
+        if (!root) {
+            return;
+        }
+        temp.push_back(root->val);
+        val += root->val;
+        if (val == target && !root->left && !root->right) {
+            ret.push_back(temp);
+        }
+        pathSumToTarget(ret, temp, root->left, val, target);
+        pathSumToTarget(ret, temp, root->right, val, target);
+    }
+};
+
+
+/*
+https://leetcode-cn.com/problems/populating-next-right-pointers-in-each-node-ii/
+ */
+/*
+// Definition for a Node.
+class Node {
+public:
+    int val;
+    Node* left;
+    Node* right;
+    Node* next;
+
+    Node() : val(0), left(NULL), right(NULL), next(NULL) {}
+
+    Node(int _val) : val(_val), left(NULL), right(NULL), next(NULL) {}
+
+    Node(int _val, Node* _left, Node* _right, Node* _next)
+        : val(_val), left(_left), right(_right), next(_next) {}
+};
+*/
+class Solution {
+public:
+    Node* connect(Node* root) {
+        if (!root) {
+            return root;
+        }
+        deque<Node*>  q;
+        q.push_back(root);
+        
+        while(!q.empty()) {
+            int size = q.size();
+            Node* temp = nullptr;
+            for (int index = 0; index < size; ++index) {
+                temp =  q.front();
+                q.pop_front();
+                temp->next = q.empty() ? nullptr : q.front();
+                
+                if (temp->left) {
+                    q.push_back(temp->left);
+                }
+                if (temp->right) {
+                    q.push_back(temp->right);
+                }
+            }
+            temp->next = nullptr;
+        }
+        return root;
+        
+    }
+};
+
+
+
+
+
+
+
+
+
+
+/*
+
+https://leetcode-cn.com/problems/populating-next-right-pointers-in-each-node
+填充每个节点的下一个右侧节点指针
+ */
+// Definition for a Node.
+/*
+class Node {
+public:
+    int val;
+    Node* left;
+    Node* right;
+    Node* next;
+
+    Node() : val(0), left(NULL), right(NULL), next(NULL) {}
+
+    Node(int _val) : val(_val), left(NULL), right(NULL), next(NULL) {}
+
+    Node(int _val, Node* _left, Node* _right, Node* _next)
+        : val(_val), left(_left), right(_right), next(_next) {}
+};
+*/
+
+// 完美二叉树 可以用这个解法：
+class Solution {
+public:
+    Node* connect(Node* root) {
+        if (!root) {
+            return root;
+        }
+        Node* left = root->left;
+        Node* right = root->right;
+        while(left) {
+            left->next = right;
+            left = left->right;
+            right = right->left;
+        }
+        connect(root->left);
+        connect(root->right);
+        return root;
+        
+    }
+};
+
+
+/*
+https://leetcode-cn.com/problems/longest-substring-without-repeating-characters
+无重复字符的最长子串
+*/
+
+class Solution {
+public:
+    int lengthOfLongestSubstring(string s) {
+        set<char> c;
+        int i = 0, j = 0;
+        int len = 0;
+        while (i < s.size() && j < s.size()) {
+
+            if (c.find(s[i]) == c.end()) {
+                c.insert(s[i++]);
+                len = max(len, i - j);
+            } else {
+                c.erase(s[j++]);
+            }
+            
+        }
+        return len;
+    }
+};
+
+/*
+https://leetcode-cn.com/problems/palindrome-linked-list
+回文链表
+ */
+
+/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ *     int val;
+ *     ListNode *next;
+ *     ListNode(int x) : val(x), next(NULL) {}
+ * };
+ */
+class Solution {
+public:
+    bool isPalindrome(ListNode* head) {
+        if (!head || !head->next) {
+            return true;
+        }
+        ListNode *slow = head;
+        ListNode *fast = head;
+        ListNode *pre = head, *ppre = nullptr;
+        while (fast != nullptr && fast->next != nullptr ) {
+            pre = slow;
+            slow = slow->next;
+            fast = fast->next->next;
+            // reverse list
+            pre->next = ppre;
+            ppre = pre;
+        }
+        if (fast != nullptr ) {
+            slow = slow->next;
+        }
+        //cout << "slow:" << slow->val << std::endl;
+        while (pre != nullptr && slow != nullptr) {
+            if (pre->val != slow->val) {
+                return false;
+            }
+            pre = pre->next;
+            slow = slow->next;
+        }
+        return true;
+        
+        
+    }
+};
+
+/*
+实现前缀树
+https://leetcode-cn.com/problems/implement-trie-prefix-tree
+*/
+
+class Trie {
+public:
+    /** Initialize your data structure here. */
+    Trie() {
+        root = nullptr;
+    }
+    
+    /** Inserts a word into the trie. */
+    void insert(string word) {
+        if (word.size() < 1) {
+            return;
+        }
+        if (root == nullptr) {
+            root = new Trie_node();
+        }
+        int index = 0;
+        Trie_node* location = root;
+        char c;
+        while (location != nullptr && index < word.size()) {
+            if (word[index] >= 'A' && word[index] <= 'Z') {
+                c = word[index] - 'A';
+            } else if (word[index] >= 'a' && word[index] <= 'z') {
+                c = word[index] - 'a';
+            } else {
+                return;
+            }
+            if (location->num_char[c] == nullptr) {
+                location->num_char[c] = new Trie_node();
+            }
+            location =  location->num_char[c];
+            ++index;
+        }
+        location->data =  word;
+
+    }
+    
+    /** Returns if the word is in the trie. */
+    bool search(string word) {
+        int index = 0;
+        Trie_node* location = root;
+        while(location != nullptr  &&  index < word.size()) {
+            char c;
+            if (word[index] >= 'A' && word[index] <= 'Z') {
+                c = word[index] - 'A';
+            } else if (word[index] >= 'a' && word[index] <= 'z') {
+                c = word[index] - 'a';
+            } else {
+                return false;
+            }
+            location = location->num_char[c];
+            ++index;
+        }
+
+        if (location == nullptr || index != word.size()) {
+            return false;
+        }
+        return location->data == word;
+        
+    }
+    
+    /** Returns if there is any word in the trie that starts with the given prefix. */
+    bool startsWith(string word) {
+        int index = 0;
+        Trie_node* location = root;
+        while(location != nullptr  &&  index < word.size()) {
+            char c;
+            if (word[index] >= 'A' && word[index] <= 'Z') {
+                c = word[index] - 'A';
+            } else if (word[index] >= 'a' && word[index] <= 'z') {
+                c = word[index] - 'a';
+            } else {
+                return false;
+            }
+            location = location->num_char[c];
+            ++index;
+        }
+        return location != nullptr && index == word.size();
+    }
+    
+    struct Trie_node {
+        Trie_node()
+        {
+            for (int index = 0; index < 26; ++index) {
+                num_char[index] = nullptr;
+            }
+        }
+        string data;
+        Trie_node *num_char[26];
+    };
+
+    Trie_node *root;
+};
+
+/**
+ * Your Trie object will be instantiated and called as such:
+ * Trie* obj = new Trie();
+ * obj->insert(word);
+ * bool param_2 = obj->search(word);
+ * bool param_3 = obj->startsWith(prefix);
+ */
+/*
+
+岛屿数量
+https://leetcode-cn.com/problems/number-of-islands
+
+*/
+
+class Solution {
+public:
+    int numIslands(vector<vector<char>>& grid) {
+        
+        int m = grid.size();
+        if (m < 1) {
+            return 0;
+        }
+        int n = grid[0].size();
+        int count = 0;
+        for (int i = 0; i < m; ++i) {
+            for (int j = 0; j < n; ++j) {
+                if (grid[i][j] != '0') {
+                    dfs(grid, i, j, m, n);
+                    ++count;
+                }
+            }
+        }
+        return count;
+    }
+    
+    void dfs(vector<vector<char>>& grid, int x, int y, int m, int n) {
+        if (x < 0 || x >= m || y < 0 || y >=n || grid[x][y] == '0') {
+            return;
+        }
+        grid[x][y] = '0';
+        dfs(grid, x+1, y, m, n);
+        dfs(grid, x-1, y, m, n);
+        dfs(grid, x, y+1, m, n);
+        dfs(grid, x, y-1, m, n);
+        
+    }
+};
+
+
+/*
+https://leetcode-cn.com/problems/sliding-window-maximum
+滑动窗口的最大值
+*/
+
+class Solution {
+public:
+    vector<int> maxSlidingWindow(vector<int>& nums, int k) {
+    
+        if (nums.empty() || nums.size() < k) {
+            return {};
+        }
+        deque<int> q;
+        // 处理第一个窗口的最大值
+        for (int index = 0 ; index < k; ++index) {
+            while(!q.empty() && nums[index] > nums[q.back()]) {
+                q.pop_back();
+            }
+            q.push_back(index);
+        }
+
+        vector<int> ret;
+        // 处理后续的窗口
+        for (int index = k;  index < nums.size() ;  ++index) {
+            ret.push_back(nums[q.front()]);
+            
+            while (!q.empty() && nums[index] > nums[q.back()]) {
+                q.pop_back();
+            }
+            q.push_back(index);
+            // 处理超过窗口的下标
+            while (!q.empty() &&  q.front() < index - k + 1) {
+                q.pop_front();
+            }
+        }
+        ret.push_back(nums[q.front()]);
+        return ret;
+    }
+};
+
+
+/*
+三个数的最大乘积
+https://leetcode-cn.com/problems/maximum-product-of-three-numbers
+*/
+
+class Solution {
+public:
+    int maximumProduct(vector<int>& nums) {
+        if (nums.size() < 3) {
+            return -1;
+        }
+        int min1 = INT_MAX, min2 = INT_MAX;
+        int max1 = INT_MIN, max2 = INT_MIN, max3 = INT_MIN;
+        for (int index = 0; index < nums.size(); ++index) {
+            if (nums[index] > max1) {
+                max3 = max2;
+                max2 = max1;
+                max1 = nums[index];
+            } else if (nums[index] > max2) {
+                max3 = max2;
+                max2 = nums[index];
+            } else if (nums[index] > max3) {
+                max3 = nums[index];
+
+            }
+
+            if (nums[index] < min1) {
+                min2 = min1;
+                min1 = nums[index];
+            } else if (nums[index] < min2) {
+                min2 = nums[index];
+            }
+        }
+
+        return max(min1 * min2 * max1,  max1 * max2 * max3);
+    }
+};
+
+/*
+乘积的最大连续子序列
+https://leetcode-cn.com/problems/maximum-product-subarray
+ */
+
+class Solution {
+public:
+    int maxProduct(vector<int>& nums) {
+        if (nums.size() < 1) {
+            return 0;
+        }
+        int ret = INT_MIN;
+        int minVal = 1, maxVal = 1;
+        for (int index = 0; index < nums.size(); ++index) {
+            if(nums[index] < 0) {
+                swap(minVal, maxVal);
+            }
+            maxVal = max(nums[index]* maxVal, nums[index]);
+            minVal = min(nums[index]* minVal, nums[index]);
+
+            ret = max(maxVal, ret);
+        }
+
+        return ret;
+    }
+};
+
+/*
+https://leetcode-cn.com/problems/rectangle-area/
+矩阵相交的面积
+*/
+
+class Solution {
+public:
+    int computeArea(int A, int B, int C, int D, int E, int F, int G, int H) {
+        long area1 = abs(C - A) * abs(D - B);
+        long area2 = abs(G - E) * abs(H - F);
+        if (E >= C || A >= G || B >= H || F >= D) {
+            return area1 + area2;
+        }
+        int lx = max(A, E);
+        int ly = max(B, F);
+        int rx = min(C, G);
+        int ry = min(D, H);
+        int common = abs(ry - ly) * abs(rx - lx);
+        return area2 + area1 -  common;
+    }
+};
+
+/*
+https://leetcode-cn.com/problems/find-median-from-data-stream
+
+数据流中的中位数
+
+*/
+
+class MedianFinder {
+public:
+    /** initialize your data structure here. */
+    MedianFinder() {
+        
+    }
+    
+    void addNum(int num) {
+        if (((l.size() + r.size()) & 1) == 0) {
+            
+            if (!l.empty() && num < l.top()) {
+                l.push(num);
+                num = l.top();
+                l.pop();
+            }
+            //cout << "r:" << num << endl;
+            r.push(num);
+        } else {
+            if (!r.empty() && num > r.top()) {
+                r.push(num);
+                num = r.top();
+                r.pop();
+            }
+            //cout << "l:" << num << endl;
+            l.push(num);
+        }
+    }
+    
+    double findMedian() {
+        if (((l.size() + r.size()) & 1) == 0) {
+             return (l.top() + r.top()) / 2.0;
+            
+        } else {
+            return (double)r.top();
+        }
+    }
+
+
+    // 大顶堆
+    priority_queue<int>   l;
+
+    //小顶堆
+    priority_queue<int, vector<int>,  std::greater<int>>   r;
+};
+
+
+/*
+
+https://leetcode-cn.com/problems/lowest-common-ancestor-of-a-binary-tree
+二叉树的最近公共祖先
+ */
+
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode(int x) : val(x), left(NULL), right(NULL) {}
+ * };
+ */
+class Solution {
+public:
+    TreeNode* lowestCommonAncestor(TreeNode* root, TreeNode* p, TreeNode* q) {
+        if (!root || !p || !q) {
+            return nullptr;
+        }
+        map<TreeNode*, TreeNode*> parent;
+        deque<TreeNode*>  que;
+        parent[root] = nullptr;
+        que.push_back(root);
+        while( parent.find(p) == parent.end() || parent.find(q) == parent.end()) {
+            
+            TreeNode* root = que.front();
+            que.pop_front();
+            if (root->left) {
+                parent[root->left] = root;
+                que.push_back(root->left);
+            }
+            if (root->right) {
+                parent[root->right] = root;
+                que.push_back(root->right);
+            }
+        }
+        set<TreeNode*>  s;
+        while (p != nullptr) {
+            s.insert(p);
+            p = parent[p];
+        }
+        while (q != nullptr && s.find(q) == s.end()) {
+            q = parent[q];
+        }
+        return q;
+    }
+};
+
+
+/*
+https://leetcode-cn.com/problems/best-time-to-buy-and-sell-stock
+买卖股票
+ */
+
+class Solution {
+public:
+    int maxProfit(vector<int>& prices) {
+    
+        if (prices.size() < 1) {
+            return 0;
+        }
+        int maxVal = 0, minVal = INT_MAX;
+        for (int index = 0; index < prices.size(); ++index) {
+            maxVal = max(maxVal, prices[index] - minVal);
+            minVal = min(minVal, prices[index]);
+        }
+        return maxVal;
+    }
+
+};
+
+
+/*
+
+无序数组中快速找到中位数  类似topk的问题
+ */
+1. 快排
+2. 堆排序
+
+
+
+/*
+在两个排序数组中找到第Ｋ小的数
+*/
+
+Todo: https://blog.csdn.net/peach90/article/details/45599843
+
+/*
+在数组中找到离value 最近的k 个数
+
+ */
+
+std::vector<int>  Knearest(const std::vector<int> &a, int value, int k) {
+    if (k > a.size()) {
+        return  std::vector<int>();
+    }
+
+    int pos = Position(a,  value);
+
+    std::vector<int> ret;
+    if (pos == 0) {
+
+        ret.assign(a.begin(), a.begin() + k);
+        return ret;
+    }
+    if (pos == a.size() - 1) {
+        ret.assign(a.end() - k, a.end());
+        return ret;
+    }
+
+    int posMid = abs(a[pos] - value) <= abs(a[pos+1] - value) ? pos  : pos + 1;
+
+    int posBegin = posMid;
+    int posEnd = posMid;
+
+    int posPreBegin = posBegin - 1;
+    int posNextEnd =  posEnd + 1;
+
+    while (posEnd - posBegin <  k - 1) {
+        if (abs(a[posPreBegin] - value) <= abs(a[posNextEnd] - value)) {
+            posBegin = posPreBegin;
+            if (posPreBegin > 0) {
+                --posPreBegin;
+            } else  {
+                posEnd = posNextEnd;
+                ++posNextEnd;
+            }
+        } else {
+            posEnd = posNextEnd;
+            if (posNextEnd < a.size() - 1) {
+                ++posNextEnd;
+            } else {
+                posBegin =  posPreBegin;
+                --posPreBegin;
+            }
+        }
+    }
+
+    ret.assign(a.begin()+posBegin, a.begin()+posEnd+1);
+    return ret;
+}
+
+
+/*
+
+https://leetcode-cn.com/problems/sort-list/
+排序链表
+ */
+
+/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ *     int val;
+ *     ListNode *next;
+ *     ListNode(int x) : val(x), next(NULL) {}
+ * };
+ */
+class Solution {
+public:
+    ListNode* sortList(ListNode* head) {
+        if (!head || !head->next) {
+            return head;
+        }
+        ListNode* slow = head;
+        ListNode* fast = head;
+        ListNode* pre = slow;
+        while (fast != nullptr && fast->next != nullptr) {
+            pre = slow;
+            slow = slow->next;
+            fast = fast->next->next;
+        }
+        pre->next = nullptr;
+        
+        ListNode *l =  sortList(head);
+        ListNode *r =  sortList(slow);
+        
+        return MergeList(l, r);
+    }
+
+
+    ListNode*  MergeList(ListNode* left, ListNode* right) {
+        ListNode* head = nullptr;
+        ListNode* p = nullptr;
+        while (left != nullptr || right != nullptr) {
+            int lval = left != nullptr ? left->val : INT_MAX;
+            int rval = right != nullptr ? right->val : INT_MAX;
+            ListNode* temp = lval < rval ? left : right;
+            if (head == nullptr) {
+                head = temp;
+                p = temp;
+            } else {
+                p->next = temp;
+                p = temp;
+            }
+            lval < rval ? left =  left->next : right = right->next;
+        }
+        return head;
+    }
+};
+
+
+
+/*
+
+https://leetcode-cn.com/problems/longest-increasing-subsequence/
+最长上升子序列
+
+*/
+class Solution {
+public:
+    int lengthOfLIS(vector<int>& nums) {
+        return lengthOfLIS2(nums, INT_MIN, 0);
+    }
+
+    int  lengthOfLIS2(vector<int>& nums, int prev, int pos) {
+        if (pos >= nums.size()) {
+            return 0;
+        }
+        int cond1 = 0, cond2 = 0;
+        if (nums[pos] > prev) {
+            cond1 =  1 + lengthOfLIS2(nums, nums[pos], pos + 1);
+        } 
+        cond2 = lengthOfLIS2(nums, prev, pos+1);
+        return max(cond1, cond2);
+
+    }
+};
+
+
+
+/*
+
+https://blog.csdn.net/lxt_Lucia/article/details/81206439
+解法2：贪心+二分：
+思路：
+
+新建一个 low 数组，low [ i ]表示长度为i的LIS结尾元素的最小值。对于一个上升子序列，显然其结尾元素越小，越有利于在
+后面接其他的元素，也就越可能变得更长。因此，我们只需要维护 low 数组，对于每一个a[ i ]，如果a[ i ] > low [当前最长的LIS长度]，
+就把 a [ i ]接到当前最长的LIS后面，即low [++当前最长的LIS长度] = a [ i ]。 
+那么，怎么维护 low 数组呢？
+对于每一个a [ i ]，如果a [ i ]能接到 LIS 后面，就接上去；否则，就用 a [ i ] 取更新 low 数组。具体方法是，
+在low数组中找到第一个大于等于a [ i ]的元素low [ j ]，用a [ i ]去更新 low [ j ]。如果从头到尾扫一遍 low 数组的话，
+时间复杂度仍是O(n^2)。我们注意到 low 数组内部一定是单调不降的，所有我们可以二分 low 数组，找出第一个大于等于a[ i ]的元素。
+二分一次 low 数组的时间复杂度的O(lgn)，所以总的时间复杂度是O(nlogn)。
+
+*/
+
+class Solution {
+public:
+    int lengthOfLIS(vector<int>& nums) {
+        vector<int> dp;
+        for (int index = 0; index < nums.size(); ++index) {
+            if (dp.empty() || nums[index] > dp[dp.size() - 1]) {
+                dp.push_back(nums[index]);
+            } else {
+                dp[findGreaterThan(dp, 0, dp.size() - 1, nums[index])] =  nums[index];
+            }
+        }
+        return dp.size();
+    }
+
+    int findGreaterThan(vector<int>& nums, int start, int end, int target) {
+        while (start <= end) {
+            int mid = (end - start)/2 + start;
+            if (nums[mid] == target) {
+                return mid;
+            } else if (nums[mid] > target) {
+                end = mid  - 1;
+            } else {
+                start = mid + 1;
+            }
+        }
+        return start;
+    }
+};
+
+
+
+/*
+
+方法一：动态规划
+算法：
+
+假设对于以 nums[i] 结尾的序列，我们知道最长序列的长度 length[i]，以及具有该长度的序列的 count[i]。
+对于每一个 i<j 和一个 A[i]<A[j]，我们可以将一个 A[j] 附加到以 A[i] 结尾的最长子序列上。
+如果这些序列比 length[j] 长，那么我们就知道我们有count[i] 个长度为 length 的序列。如果这些序列的长度与 length[j] 相等，那么我们就知道现在有 count[i] 个额外的序列（即 count[j]+=count[i]）。
+
+
+最长递增子序列的个数
+https://leetcode-cn.com/problems/number-of-longest-increasing-subsequence
+ */
+
+class Solution {
+public:
+    int findNumberOfLIS(vector<int>& nums) {
+        if (nums.size() < 1) {
+            return 0;
+        }
+        int n = nums.size();
+        vector<int> length(n, 1);
+        vector<int> count(n, 1);
+        
+        for (int j = 1; j < n;  ++j) {
+            for (int i = 0; i < j; ++i) {
+                if (nums[i] < nums[j]) {
+                    if (length[i] >= length[j]) {
+                        length[j] = length[i] + 1;
+                        count[j] =  count[i];
+                    } else if (length[i] + 1 == length[j]) {
+                        count[j] += count[i];
+                    }
+                }
+            }
+        }
+        int maxLen = 0;
+        for (int index = 0; index < length.size(); ++index) {
+            maxLen = max(length[index], maxLen);
+        }
+
+        int retCount = 0;
+        for (int index = 0; index < length.size(); ++index) {
+            if (length[index] == maxLen) {
+                retCount += count[index];
+            }
+        }
+        return retCount;
+    }
+};
+
+
+/*
+
+最长连续递增序列
+https://leetcode-cn.com/problems/longest-continuous-increasing-subsequence/
+*/
+
+class Solution {
+public:
+    int findLengthOfLCIS(vector<int>& nums) {
+        if (nums.size() < 1) {
+            return 0;
+        }
+        int maxLen = 1;
+        int index = 0;
+        while (index < nums.size() - maxLen) {
+            int count = 0;
+            int j = index;
+            while(j + 1 < nums.size() && nums[j] < nums[j+1]) {
+                ++count;
+                ++j;
+            }
+            ++j;
+            index = j;
+            maxLen = max(count+1, maxLen);
+        }
+        return maxLen;
+    }
+};
+
+/*
+https://leetcode-cn.com/problems/rotate-array
+旋转数组
+ */
+class Solution {
+public:
+    void rotate(vector<int>& nums, int k) {
+       k %= nums.size();
+       reverse(nums.begin(), nums.end());
+       reverse(nums.begin(), nums.begin() + k);
+       reverse(nums.begin()+k, nums.end());
+    }
+};
+
+
+/*
+https://leetcode-cn.com/problems/linked-list-cycle
+
+ * Definition for singly-linked list.
+ * struct ListNode {
+ *     int val;
+ *     ListNode *next;
+ *     ListNode(int x) : val(x), next(NULL) {}
+ * };
+ */
+class Solution {
+public:
+    bool hasCycle(ListNode *head) {
+        if (!head) {
+            return false;
+        }
+        ListNode *slow = head;
+        ListNode *fast = head;
+        while (slow != nullptr  && fast != nullptr) {
+            slow = step(slow,  1);
+            fast = step(fast, 2);
+            if (slow != nullptr && fast != nullptr && slow == fast) {
+                return true;
+            }
+        }
+        return false;
+    }
+    ListNode *step(ListNode* node, int s) {
+        if (!node) {
+            return nullptr;
+        }
+        for (int index = 0; index < s; ++index) {
+            if (node != nullptr) {
+                node = node->next;
+            } else {
+                return nullptr;
+            }
+        }
+        return node;
+    }
+};
+
+
+
+/*
+
+https://leetcode-cn.com/problems/binary-tree-maximum-path-sum
+
+*/
+
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode(int x) : val(x), left(NULL), right(NULL) {}
+ * };
+ */
+class Solution {
+public:
+    int maxSum = INT_MIN;
+
+    int maxPathSum(TreeNode* root) {
+        if (!root) {
+            return 0;
+        }
+        mps(root);
+        return maxSum;
+    }
+
+    int mps(TreeNode* root) {
+        if (!root) {
+            return 0;
+        }
+        int leftGain  = max(mps(root->left), 0);
+        int rightGain = max(mps(root->right), 0);
+        
+        int total = leftGain + rightGain + root->val;
+        maxSum =  total > maxSum ? total : maxSum;
+        
+        return  root->val + max(leftGain, rightGain);
+    }
+};
+
+
+
+
+/*
+
+https://leetcode-cn.com/problems/minimum-path-sum/
+输入:
+[
+  [1,3,1],
+  [1,5,1],
+  [4,2,1]
+]
+输出: 7
+解释: 因为路径 1→3→1→1→1 的总和最小。
+
+dp[i,j] =  grid[i, j] + min(dp[i+1, j], dp[i][j+1]);
+ */
+class Solution {
+public:
+    int minPathSum(vector<vector<int>>& grid) {
+        if (grid.size() < 1) {
+            return -1;
+        }
+        int m = grid.size();
+        int n = grid[0].size();
+        vector<vector<int>> mvec(m, vector<int>(n, 0));
+
+        for (int i = m - 1; i >= 0; --i) {
+            for (int j = n - 1; j >= 0; --j) {
+
+                int a = i+1 < m ? mvec[i+1][j] : INT_MAX;
+                int b = j+1 < n ? mvec[i][j+1] : INT_MAX;
+                if (a == INT_MAX && b == INT_MAX) {
+                    mvec[i][j] =  grid[i][j];
+                } else {
+                    mvec[i][j] =  grid[i][j] + min(a, b);
+                }
+            }
+        }
+        return mvec[0][0];
+    }
+};
+
+
+/*
+
+三数之和接近某数
+https://leetcode-cn.com/problems/3sum-closest
+*/
+
+class Solution {
+public:
+    int threeSumClosest(vector<int>& nums, int target) {
+        //vector<vector<int>> vec;
+        if (nums.size() < 3) {
+            return 0;
+        }
+        int minval = INT_MAX;
+        //vector<int> temp;
+        int ret = 0;
+        sort(nums.begin(), nums.end());
+        int i = 0;
+        while (i <= nums.size() - 3) {
+            int j = i + 1;
+            int k = nums.size() -  1;
+            while (j < k) {
+                int sum = nums[i] + nums[j] + nums[k];
+                
+                if (sum == target) {
+                    return sum;
+                } else if (sum > target) {
+                    if (abs(sum - target) < minval) {
+                        minval = abs(sum - target);
+                        ret = sum;
+                    }
+
+                    while (k > j + 1 && nums[k-1] == nums[k]) --k;
+                    --k;
+
+                } else  {
+
+                    if (abs(sum - target) < minval) {
+                        minval = abs(sum - target);
+                        ret = sum;
+                    }
+                    while ( j + 1 < k && nums[j] == nums[j+1]) ++j;
+                    ++j;
+                }
+                
+            }
+            
+            while ( i< nums.size() -2 &&  nums[i] == nums[i+1]) ++i;
+            ++i;
+                
+        }
+        return ret;
+    }
+    
+};
+
+
+/*
+三数之和等于某数
+https://leetcode-cn.com/problems/3sum/
+ */
+
+class Solution {
+public:
+    vector<vector<int>> threeSum(vector<int>& nums) {
+        return ThreeSum(nums, 0);
+    }
+
+    vector<vector<int>> ThreeSum(vector<int>& nums, int target) {
+        vector<vector<int>> vec;
+        if (nums.size() < 3) {
+            return vec;
+        }
+        sort(nums.begin(), nums.end());
+        int i = 0;
+        while (i <= nums.size() - 3) {
+            int j = i + 1;
+            int k = nums.size() -  1;
+            while (j < k) {
+                int sum = nums[i] + nums[j] + nums[k];
+                
+                if (sum == 0) {
+                    vec.push_back({nums[i], nums[j], nums[k]});
+                    while (j+1 < k && nums[j] == nums[j+1])  ++j;
+                    ++j;
+                    while (k > j+1 && nums[k-1] == nums[k]) --k;
+                    --k;
+                } else if (sum > 0) {
+                    while (k > j+1 && nums[k-1] == nums[k]) --k;
+                    --k;
+                }  else {
+                    while (j+1 < k && nums[j] == nums[j+1])  ++j;
+                    ++j;
+                }        
+            }
+            
+            while ( i< nums.size() -2 &&  nums[i] == nums[i+1]) ++i;
+            ++i;
+                
+        }
+        return vec;
+    }
+
+};
+
+
+
+/*
+https://leetcode-cn.com/problems/merge-k-sorted-lists
+合并K个有序链表
+ */
+
+class Solution {
+public:
+    ListNode* mergeKLists(vector<ListNode*>& lists) {
+        if (lists.size() < 1) return nullptr;
+        return mergeKLists(lists, 0, lists.size() -1);
+    }
+
+    ListNode* mergeKLists(vector<ListNode*>& lists, int start, int end) {
+        if (start == end) {
+            return lists[start];
+        }
+        int mid = (end - start) / 2 + start;
+        
+        ListNode *a = mergeKLists(lists, start, mid);
+        ListNode *b = mergeKLists(lists, mid+1, end);
+        return mergeTwoLists(a, b);
+    }
+    
+    ListNode* mergeTwoLists(ListNode* l1, ListNode* l2) {
+        ListNode* newHead = nullptr;
+        ListNode* p = nullptr;
+        while(l1 != nullptr  || l2 != nullptr) {
+            int val1 = l1 != nullptr ? l1->val : INT_MAX;
+            int val2 = l2 != nullptr ? l2->val : INT_MAX;
+            ListNode* temp = val1 < val2 ? l1 : l2;
+            if (newHead == nullptr) {
+                newHead = temp;
+                p = temp;
+            } else {
+                p->next = temp;
+                p = temp;
+            }
+            val1 < val2 ? l1 = l1->next : l2 = l2->next;
+        }
+        return newHead;
+    }
+};
+
+
+
 /*
 
 
-https://leetcode-cn.com/problems/longest-common-prefix/
 
-编写一个函数来查找字符串数组中的最长公共前缀。
-
-如果不存在公共前缀，返回空字符串 ""。
+运用你所掌握的数据结构，设计和实现一个  LRU (最近最少使用) 缓存机制。它应该支持以下操作： 获取数据 get 和 写入数据 put 。
+https://leetcode-cn.com/problems/lru-cache/
  */
 
+
+class LRUCache {
+public:
+
+    typedef unordered_map<int, pair<int, list<int>::iterator>>  Cache;
+
+    LRUCache(int capacity) {
+        capacity_ = capacity;
+    }
+    
+    int get(int key) {
+        Cache::iterator iter = cache.find(key);
+        if (iter != cache.end()) {
+            update(iter);
+            return iter->second.first;
+        }
+        return -1;
+    }
+    
+    void put(int key, int value) {
+        Cache::iterator iter = cache.find(key);
+        if (iter != cache.end()) {
+            update(iter);
+        } else {
+
+            if (lru.size() >= capacity_) {
+                
+                cache.erase( lru.back());
+                lru.pop_back();
+            }
+            lru.push_front(key);
+        }
+        
+        cache[key] = make_pair(value, lru.begin());
+        
+    }
+    void update(Cache::iterator iter) {
+        lru.erase(iter->second.second);
+        lru.push_front(iter->first);
+        iter->second.second = lru.begin();
+    }
+
+    list<int>  lru;
+    int capacity_;
+    //typedef unordered_map<int, pair<int, list<int>::iterator>>  Cache;
+    Cache cache;
+    
+};
+
+
+
+
+
+/*
+https://leetcode-cn.com/problems/longest-common-prefix/
+编写一个函数来查找字符串数组中的最长公共前缀。
+如果不存在公共前缀，返回空字符串 ""。
+*/
 
 class Solution {
 public:
@@ -22,6 +1278,8 @@ public:
         if (strs.size() < 1) return "";
         return lcs(strs, 0, strs.size() - 1);
     }
+
+
     string lcs(vector<string>& strs, int left, int right) {
         if (left == right) {
             return strs[left];
@@ -31,6 +1289,7 @@ public:
         string l = lcs(strs, left, mid);
     
         string r = lcs(strs, mid+1, right);
+
         return lcs2(l, r);
     }
 
@@ -43,7 +1302,6 @@ public:
         return l.substr(0, i);
     }
 };
-
 
 
 /*
@@ -59,6 +1317,8 @@ public:
     int findKthLargest(vector<int>& nums, int k) {
         return findKmin(nums, 0, nums.size() - 1, nums.size() - k);
     }
+
+
     int partion(vector<int>& nums, int left, int right) {
         if (left >= right) return left;
 
@@ -279,9 +1539,6 @@ public:
 
 你的算法应该具有线性时间复杂度。 你可以不使用额外空间来实现吗？
 
-来源：力扣（LeetCode）
-链接：https://leetcode-cn.com/problems/single-number-ii
-著作权归领扣网络所有。商业转载请联系官方授权，非商业转载请注明出处。
 
 
  */
@@ -419,6 +1676,7 @@ public:
         if (m > n) {
             return findMedianSortedArrays(nums2, nums1);
         }
+
         while (l <= r) {
             int i = (l + r) / 2, j = (m + n + 1) / 2 - i;
             if (i && nums1[i - 1] > nums2[j]) {
@@ -465,15 +1723,13 @@ public:
                 int silde = obstk.empty()? index : (index - obstk.top() - 1);
                 area = max (area,  high * silde);
             }
+
             
             obstk.push(index);
         }
         return area;
     }
 };
-
-
-
 
 /*
 https://leetcode.com/problems/maximal-rectangle/
@@ -516,9 +1772,6 @@ public:
         return ret;
     }
 };
-
-
-
 
 
 
@@ -677,7 +1930,6 @@ public:
         return arr1;
     }
 };
-
 
 
 
@@ -840,7 +2092,7 @@ https://leetcode.com/problems/unique-paths-ii/
 
 */
 
-class Solution {
+class Solution {            
 public:
     int uniquePathsWithObstacles(vector<vector<int>>& obstacleGrid) {
         int m = obstacleGrid.size();
@@ -969,7 +2221,6 @@ public:
         return  abs(n%2) == 1? x * myPow(x*x, abs(n/2)) : myPow(x*x, abs(n/2));
     }
 };
-
 
 /*
 https://leetcode.com/problems/subsets
